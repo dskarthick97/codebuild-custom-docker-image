@@ -1,0 +1,28 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Creates Amazon ECR repositories for storing custom built docker images.
+
+Resources:
+  BuildImageRepository:
+    Type: AWS::ECR::Repository
+    DeletionPolicy: Retain
+    Properties:
+      RepositoryName: "Demo-ECR-repo"
+      RepositoryPolicyText:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: CodeBuildAccess
+            Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action:
+              - "ecr:BatchGetImage"
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchCheckLayerAvailability"
+      ImageScanningConfiguration:
+        ScanOnPush: true
+
+Outputs:
+  BuildImageRepositoryUri:
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${BuildImageRepository}"

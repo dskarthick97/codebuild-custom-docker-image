@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  This CloudFormation template creates a CodeBuild Build project that points to
+  a GitHub repository as its source.
+
+Resources:
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub CodeBuildRole-${AWS::StackName}
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "codebuild.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: "CodeBuildAccessPolicies"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                  - "ecr:GetAuthorizationToken"
+                Resource:
+                  - "*"
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: CodeBuild-Demo
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Artifacts:
+        Type: no_artifacts
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/ecr-repo-name
+        ImagePullCredentialsType: CODEBUILD
+      Source:
+        Type: GITHUB
+        Auth:
+          Type: OAUTH
+        BuildSpec: buildspec.yaml
+        Location: https://github.com/username/repository.git
+      TimeoutInMinutes: 10
